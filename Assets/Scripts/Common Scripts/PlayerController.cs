@@ -6,13 +6,18 @@ public class PlayerController : MonoBehaviour
     private float playerMaxMovementSpeed = 3.0f;
     private float playerMovementAcceleration = 100f;
     private float mouseSensitivity = 1.0f;
+    private float cameraRotationSpeed = 45.0f;
+    private float currentCameraVerticalRotation = 0;
+    private float maxVerticalCameraRotation = 85;
     private Vector3 velocity = Vector3.zero;
     private Vector2 movementInput = Vector2.zero;
+    private Vector2 cameraInput = Vector2.zero;
 
     private Rigidbody playerRb;
     private GameObject playerCamera;
     private PlayerInput playerInput;
     private InputAction movementAction;
+    private InputAction cameraAction;
 
     // Start is called before the first frame update
     void Start()
@@ -21,12 +26,7 @@ public class PlayerController : MonoBehaviour
         playerCamera = GameObject.Find("Main Camera");
         playerInput = GetComponent<PlayerInput>();
         movementAction = playerInput.actions["Movement"];
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
+        cameraAction = playerInput.actions["Camera"];
     }
 
     private void FixedUpdate()
@@ -70,6 +70,19 @@ public class PlayerController : MonoBehaviour
 
     private void RotateCamera()
     {
+        cameraInput = cameraAction.ReadValue<Vector2>();
 
+        if ((cameraInput.y > 0 && playerCamera.transform.localRotation.x < maxVerticalCameraRotation) || (cameraInput.y < 0 && playerCamera.transform.localRotation.x > -maxVerticalCameraRotation))
+        {
+            if (cameraInput.y > 0 || cameraInput.y < 0)
+            {
+                currentCameraVerticalRotation += cameraRotationSpeed * mouseSensitivity * -cameraInput.y * Time.deltaTime;
+
+                currentCameraVerticalRotation = Mathf.Clamp(currentCameraVerticalRotation, -maxVerticalCameraRotation, maxVerticalCameraRotation);
+
+                playerCamera.transform.localEulerAngles = new Vector3(currentCameraVerticalRotation, 0, 0);
+            }
+        }
+        transform.eulerAngles += cameraRotationSpeed * mouseSensitivity * new Vector3(0, cameraInput.x, 0) * Time.deltaTime;
     }
 }
