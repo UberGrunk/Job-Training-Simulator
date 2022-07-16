@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.LowLevel;
 
 public class PlayerController : MonoBehaviour
 {
@@ -12,12 +13,14 @@ public class PlayerController : MonoBehaviour
     private Vector3 velocity = Vector3.zero;
     private Vector2 movementInput = Vector2.zero;
     private Vector2 cameraInput = Vector2.zero;
+    private bool captureMouse = true;
 
     private Rigidbody playerRb;
     private GameObject playerCamera;
     private PlayerInput playerInput;
     private InputAction movementAction;
     private InputAction cameraAction;
+    private InputAction captureMouseAction;
 
     // Start is called before the first frame update
     void Start()
@@ -27,17 +30,31 @@ public class PlayerController : MonoBehaviour
         playerInput = GetComponent<PlayerInput>();
         movementAction = playerInput.actions["Movement"];
         cameraAction = playerInput.actions["Camera"];
+        captureMouseAction = playerInput.actions["CaptureMouse"];
+        Cursor.visible = false;
+    }
+
+    private void Update()
+    {
+        CheckCaptureMouseAction();
     }
 
     private void FixedUpdate()
     {
-        UpdateVelocity();
-        Move();
+        if (captureMouse)
+        {
+            UpdateVelocity();
+            Move();
+            CenterMousePosition();
+        }
     }
 
     private void LateUpdate()
     {
-        RotateCamera();
+        if (captureMouse)
+        {
+            RotateCamera();
+        }
     }
 
     private void UpdateVelocity()
@@ -84,5 +101,26 @@ public class PlayerController : MonoBehaviour
             }
         }
         transform.eulerAngles += cameraRotationSpeed * mouseSensitivity * new Vector3(0, cameraInput.x, 0) * Time.deltaTime;
+    }
+
+    private void CenterMousePosition()
+    {
+        //https://answers.unity.com/questions/1738031/force-update-of-mouse-position-with-the-new-input-1.html?childToView=1754530#answer-1754530
+        Vector2 warpPosition = Screen.safeArea.center;
+        Mouse.current.WarpCursorPosition(warpPosition);
+        InputState.Change(Mouse.current.position, warpPosition);
+    }
+
+    private void CheckCaptureMouseAction()
+    {
+        if(captureMouseAction.WasPressedThisFrame())
+        {
+            captureMouse = !captureMouse;
+
+            if(captureMouse)
+                Cursor.visible = false;
+            else
+                Cursor.visible = true;
+        }
     }
 }
