@@ -5,19 +5,19 @@ using UnityEngine;
 public class LeversAndGauges : MonoBehaviour
 {
     [SerializeField]
-    private int minValue = 10;
+    protected int minValue = 10;
     [SerializeField]
-    private int maxValue = 90;
+    protected int maxValue = 90;
     [SerializeField]
-    private float minRotation = 225;
+    protected float minRotation = 225;
     [SerializeField]
-    private float maxRotation = 135;
+    protected float maxRotation = 135;
     [SerializeField]
-    private bool increaseValOnPosRotation = true;
+    protected bool increaseValOnPosRotation = true;
     [SerializeField]
-    private Vector3 rotationAxle = new Vector3(0, 1, 0);
+    protected Vector3 rotationAxle = new Vector3(0, 1, 0);
     [SerializeField]
-    private GameObject rotatingObject;
+    protected GameObject rotatingObject;
 
     public void Start()
     {
@@ -29,14 +29,14 @@ public class LeversAndGauges : MonoBehaviour
         
     }
 
-    public double SetValue(int newValue)
+    public float SetValue(int newValue)
     {
         if(newValue < minValue)
             newValue = minValue;
         else if (newValue > maxValue)
             newValue = maxValue;
 
-        float percentageOfValue = (newValue - minValue) / (maxValue - minValue);
+        float percentageOfValue = (float)(newValue - minValue) / (float)(maxValue - minValue);
 
         if (!increaseValOnPosRotation)
             percentageOfValue = 1 - percentageOfValue;

@@ -5,6 +5,7 @@ using UnityEngine;
 public class SteamEngineController : MonoBehaviour
 {
     [SerializeField]private float flywheelRPM = 10;
+    private float flywheelMaxRPM = 100;
     private float flywheelCurrentRotation = 90;
     private Vector2 pistonRodMovementRange = new Vector2(1.41f, 1.81f);
     private Vector2 controlRodMovementRange = new Vector2(1.25f, 1.45f);
@@ -21,6 +22,21 @@ public class SteamEngineController : MonoBehaviour
     private GameObject controlRod;
     private GameObject controlRodRotationJoint;
 
+    [SerializeField]
+    private GameObject rpmGauge;
+    private LeversAndGauges rpmGaugeScript;
+
+    [SerializeField]
+    private GameObject steamOutletLever;
+    private Lever steamOutletLeverScript;
+    private int steamOutletLeverDeadzone = 5;
+
+    private void Awake()
+    {
+        rpmGaugeScript = rpmGauge.GetComponent<LeversAndGauges>();
+        steamOutletLeverScript = steamOutletLever.GetComponent<Lever>();
+    }
+
     // Start is called before the first frame update
     void Start()
     {
@@ -32,11 +48,15 @@ public class SteamEngineController : MonoBehaviour
         controlRodRotationJoint = controlRod.transform.Find("Rotation Joint").gameObject;
         pistonRodTotalMovementRange = pistonRodMovementRange.y - pistonRodMovementRange.x;
         controlRodTotalMovementRange = controlRodMovementRange.y - controlRodMovementRange.x;
+
+        steamOutletLeverScript.SetValue(50);
     }
 
     // Update is called once per frame
     void Update()
     {
+        UpdateFlywheelRPM();
+
         if (flywheelRPM > 0)
         {
             RotateFlywheel();
@@ -44,6 +64,7 @@ public class SteamEngineController : MonoBehaviour
             CalculateConnectingArmAngle();
             RepositionPistonRod();
             RepositionControlRod();
+            SetRPMGauge();
         }
     }
 
@@ -132,5 +153,36 @@ public class SteamEngineController : MonoBehaviour
         }
 
         controlRodRotationJoint.transform.localEulerAngles = new Vector3(-connectingArmAngle * 0.4f, 0, 0);
+    }
+
+    private void SetRPMGauge()
+    {
+        rpmGaugeScript.SetValue((int)(flywheelRPM + 0.5));
+    }
+
+    private void UpdateFlywheelRPM()
+    {
+        int currentSteamOutletValue = steamOutletLeverScript.GetValue();
+
+        if(currentSteamOutletValue < (50 - steamOutletLeverDeadzone))
+        {
+            if(flywheelRPM > 0)
+            {
+                flywheelRPM -= 5.0f * (currentSteamOutletValue / 50.0f) * Time.deltaTime;
+
+                if(flywheelRPM < 0)
+                    flywheelRPM = 0;
+            }
+        }
+        else if(currentSteamOutletValue > (50 + steamOutletLeverDeadzone))
+        {
+            if(flywheelRPM < flywheelMaxRPM)
+            {
+                flywheelRPM += 5.0f * ((currentSteamOutletValue - 50) / 50.0f) * Time.deltaTime;
+
+                if(flywheelRPM > flywheelMaxRPM)
+                    flywheelRPM = flywheelMaxRPM;
+            }
+        }
     }
 }
