@@ -4,9 +4,39 @@ using UnityEngine;
 
 public class SteamEngineController : MonoBehaviour
 {
-    [SerializeField]private float flywheelRPM = 10;
+    [SerializeField]
+    private float flywheelRPM = 0;
     private float flywheelMaxRPM = 100;
     private float flywheelCurrentRotation = 90;
+    private float flywheelNaturalResistance = 5;
+    private float flywheelAccelerationPower = 10;
+
+    [SerializeField]
+    private float steamPressure = 0;
+    private float maxSteamPressure = 100;
+    private float maxSteamUsageRate = 0.8f;
+    private float maxSteamBuildUpRate = 0.8f;
+    [SerializeField]
+    private GameObject steamPressureGauge;
+    private LeversAndGauges steamPressureGaugeScript;
+
+    [SerializeField]
+    private float fuelAmount = 0;
+    private float maxFuelAmount = 100;
+    private float fuelBurnRate = 0.15f;
+
+    [SerializeField]
+    private float waterAmount = 0;
+    private float maxWaterAmount = 100;
+    private float maxWaterUsageRate = 0.2f;
+    private float maxWaterFillRate = 0.4f;
+    [SerializeField]
+    private GameObject waterInjectorLever;
+    private Lever waterInjectorLeverScript;
+    [SerializeField]
+    private GameObject waterLevelGauge;
+    private LeversAndGauges waterLevelGaugeScript;
+
     private Vector2 pistonRodMovementRange = new Vector2(1.41f, 1.81f);
     private Vector2 controlRodMovementRange = new Vector2(1.25f, 1.45f);
     private float pistonRodTotalMovementRange;
@@ -29,12 +59,14 @@ public class SteamEngineController : MonoBehaviour
     [SerializeField]
     private GameObject steamOutletLever;
     private Lever steamOutletLeverScript;
-    private int steamOutletLeverDeadzone = 5;
 
     private void Awake()
     {
         rpmGaugeScript = rpmGauge.GetComponent<LeversAndGauges>();
         steamOutletLeverScript = steamOutletLever.GetComponent<Lever>();
+        waterInjectorLeverScript = waterInjectorLever.GetComponent<Lever>();
+        steamPressureGaugeScript = steamPressureGauge.GetComponent<LeversAndGauges>();
+        waterLevelGaugeScript = waterLevelGauge.GetComponent<LeversAndGauges>();
     }
 
     // Start is called before the first frame update
@@ -49,13 +81,21 @@ public class SteamEngineController : MonoBehaviour
         pistonRodTotalMovementRange = pistonRodMovementRange.y - pistonRodMovementRange.x;
         controlRodTotalMovementRange = controlRodMovementRange.y - controlRodMovementRange.x;
 
-        steamOutletLeverScript.SetValue(50);
+        steamOutletLeverScript.SetValue(0);
+        waterInjectorLeverScript.SetValue(0);
+        GlobalSettingsManager.Instance.CaptureMouse = true;
     }
 
     // Update is called once per frame
     void Update()
     {
         UpdateFlywheelRPM();
+        SetRPMGauge();
+        SetSteamPressureGauge();
+        SetWaterLevelGauge();
+        UpdateSteamPressure();
+        UpdateWaterAmount();
+        UpdateFuelAmount();
 
         if (flywheelRPM > 0)
         {
@@ -64,7 +104,6 @@ public class SteamEngineController : MonoBehaviour
             CalculateConnectingArmAngle();
             RepositionPistonRod();
             RepositionControlRod();
-            SetRPMGauge();
         }
     }
 
@@ -157,32 +196,113 @@ public class SteamEngineController : MonoBehaviour
 
     private void SetRPMGauge()
     {
-        rpmGaugeScript.SetValue((int)(flywheelRPM + 0.5));
+        rpmGaugeScript.SetValue(flywheelRPM);
+    }
+
+    private void SetSteamPressureGauge()
+    {
+        steamPressureGaugeScript.SetValue(steamPressure);
+    }
+
+    private void SetWaterLevelGauge()
+    {
+        waterLevelGaugeScript.SetValue(waterAmount);
     }
 
     private void UpdateFlywheelRPM()
     {
-        int currentSteamOutletValue = steamOutletLeverScript.GetValue();
+        float targetFlywheelRPM = 0;
 
-        if(currentSteamOutletValue < (50 - steamOutletLeverDeadzone))
+        float currentSteamOutletValue = steamOutletLeverScript.GetValue();
+
+        float percentageOfSteamPressure = steamPressure / maxSteamPressure;
+
+        float minValueToRotateFlywheel = steamOutletLeverScript.GetMaxValue() - (steamOutletLeverScript.GetMaxValue() * percentageOfSteamPressure);
+
+        float steamOutletPercentage = (currentSteamOutletValue - minValueToRotateFlywheel) / steamOutletLeverScript.GetMaxValue();
+
+        if (currentSteamOutletValue > minValueToRotateFlywheel)
         {
-            if(flywheelRPM > 0)
-            {
-                flywheelRPM -= 5.0f * (currentSteamOutletValue / 50.0f) * Time.deltaTime;
-
-                if(flywheelRPM < 0)
-                    flywheelRPM = 0;
-            }
+            
+            targetFlywheelRPM = flywheelMaxRPM * steamOutletPercentage;
         }
-        else if(currentSteamOutletValue > (50 + steamOutletLeverDeadzone))
+
+        if(flywheelRPM > targetFlywheelRPM)
         {
-            if(flywheelRPM < flywheelMaxRPM)
-            {
-                flywheelRPM += 5.0f * ((currentSteamOutletValue - 50) / 50.0f) * Time.deltaTime;
-
-                if(flywheelRPM > flywheelMaxRPM)
-                    flywheelRPM = flywheelMaxRPM;
-            }
+            flywheelRPM -= (flywheelNaturalResistance + (flywheelAccelerationPower * percentageOfSteamPressure * steamOutletPercentage)) * Time.deltaTime;
         }
+        else if(flywheelRPM < targetFlywheelRPM)
+        {
+            flywheelRPM += (flywheelAccelerationPower * percentageOfSteamPressure * steamOutletPercentage) * Time.deltaTime;
+        }
+
+        if (flywheelRPM < 0)
+            flywheelRPM = 0;
+    }
+
+    private void UpdateFuelAmount()
+    {
+        if (fuelAmount > 0)
+        {
+            fuelAmount -= fuelBurnRate * Time.deltaTime;
+
+            if(fuelAmount < 0)
+                fuelAmount = 0;
+        }
+    }
+
+    private void UpdateWaterAmount()
+    {
+        if(waterAmount < maxWaterAmount)
+        {
+            waterAmount += maxWaterFillRate * (waterInjectorLeverScript.GetValue() / waterInjectorLeverScript.GetMaxValue()) * Time.deltaTime;
+
+            if(waterAmount > maxWaterAmount)
+                waterAmount = maxWaterAmount;
+        }
+
+        if(waterAmount > 0)
+        {
+            float percentageOfFuel = fuelAmount / maxFuelAmount;
+
+            waterAmount -= maxWaterUsageRate * percentageOfFuel * Time.deltaTime;
+
+            if(waterAmount < 0)
+                waterAmount = 0;
+        }
+    }
+
+    private void UpdateSteamPressure()
+    {
+        if(steamPressure < maxSteamPressure)
+        {
+            float percentageOfFuel = fuelAmount / maxFuelAmount;
+            float percentageOfWater = waterAmount / maxWaterAmount;
+
+            steamPressure += maxSteamBuildUpRate * percentageOfFuel * percentageOfWater * Time.deltaTime;
+
+            if(steamPressure > maxSteamPressure)
+                steamPressure = maxSteamPressure;
+        }
+
+        if(steamPressure > 0)
+        {
+            float steamOutletPercentage = steamOutletLeverScript.GetValue() / steamOutletLeverScript.GetMaxValue();
+
+            steamPressure -= maxSteamUsageRate * steamOutletPercentage * Time.deltaTime;
+
+            if(steamPressure < 0)
+                steamPressure = 0;
+        }
+    }
+
+    public float AddFuel(float amount)
+    {
+        if((fuelAmount + amount) <= maxFuelAmount)
+        {
+            fuelAmount += amount;
+        }
+
+        return fuelAmount;
     }
 }

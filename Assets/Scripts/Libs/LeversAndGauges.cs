@@ -5,9 +5,9 @@ using UnityEngine;
 public class LeversAndGauges : MonoBehaviour
 {
     [SerializeField]
-    protected int minValue = 10;
+    protected float minValue = 10;
     [SerializeField]
-    protected int maxValue = 90;
+    protected float maxValue = 90;
     [SerializeField]
     protected float minRotation = 225;
     [SerializeField]
@@ -29,22 +29,34 @@ public class LeversAndGauges : MonoBehaviour
         
     }
 
-    public float SetValue(int newValue)
+    public float GetMaxValue()
+    {
+        return maxValue;
+    }
+
+    public float GetMinValue()
+    {
+        return minValue;
+    }
+
+    public float SetValue(float newValue)
     {
         if(newValue < minValue)
             newValue = minValue;
         else if (newValue > maxValue)
             newValue = maxValue;
 
-        float percentageOfValue = (float)(newValue - minValue) / (float)(maxValue - minValue);
+        float percentageOfValue = (newValue - minValue) / (maxValue - minValue);
 
         if (!increaseValOnPosRotation)
             percentageOfValue = 1 - percentageOfValue;
 
         float rotationRange = (maxRotation <= minRotation ? maxRotation + 360 : maxRotation) - minRotation;
+
         float newRotation = ((rotationRange * percentageOfValue) + minRotation) % 360;
 
         rotatingObject.transform.localEulerAngles = new Vector3(newRotation * rotationAxle.x, newRotation * rotationAxle.y, newRotation * rotationAxle.z);
+        //rotatingObject.transform.eulerAngles = new Vector3(newRotation * rotationAxle.x, newRotation * rotationAxle.y, newRotation * rotationAxle.z);
 
         return newRotation;
     }

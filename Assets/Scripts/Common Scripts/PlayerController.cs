@@ -13,7 +13,6 @@ public class PlayerController : MonoBehaviour
     private Vector3 velocity = Vector3.zero;
     private Vector2 movementInput = Vector2.zero;
     private Vector2 cameraInput = Vector2.zero;
-    private bool captureMouse = true;
 
     private Rigidbody playerRb;
     private GameObject playerCamera;
@@ -41,7 +40,7 @@ public class PlayerController : MonoBehaviour
 
     private void FixedUpdate()
     {
-        if (captureMouse)
+        if (GlobalSettingsManager.Instance.CaptureMouse)
         {
             UpdateVelocity();
             Move();
@@ -51,7 +50,7 @@ public class PlayerController : MonoBehaviour
 
     private void LateUpdate()
     {
-        if (captureMouse)
+        if (GlobalSettingsManager.Instance.CaptureMouse)
         {
             RotateCamera();
         }
@@ -115,9 +114,9 @@ public class PlayerController : MonoBehaviour
     {
         if(captureMouseAction.WasPressedThisFrame())
         {
-            captureMouse = !captureMouse;
+            GlobalSettingsManager.Instance.CaptureMouse = !GlobalSettingsManager.Instance.CaptureMouse;
 
-            if(captureMouse)
+            if(GlobalSettingsManager.Instance.CaptureMouse)
                 Cursor.visible = false;
             else
                 Cursor.visible = true;
