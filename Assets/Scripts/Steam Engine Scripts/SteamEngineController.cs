@@ -24,6 +24,10 @@ public class SteamEngineController : MonoBehaviour
     private float fuelAmount = 0;
     private float maxFuelAmount = 100;
     private float fuelBurnRate = 0.15f;
+    [SerializeField]
+    private List<GameObject> fuelGameObjects;
+    [SerializeField]
+    private Light fuelSpotlight;
 
     [SerializeField]
     private float waterAmount = 0;
@@ -39,11 +43,13 @@ public class SteamEngineController : MonoBehaviour
 
     private Vector2 pistonRodMovementRange = new Vector2(1.41f, 1.81f);
     private Vector2 controlRodMovementRange = new Vector2(1.25f, 1.45f);
+    private Vector2 pistonRodCrankConnectionMovementRange = new Vector2(3.48f, 4.28f);
+    private Vector2 controlRodCrankConnectionMovementRange = new Vector2(3.68f, 4.08f);
     private float pistonRodTotalMovementRange;
     private float controlRodTotalMovementRange;
-    private bool pistonRodExtending = true;
+    private float pistonRodCrankConnectionTotalMovementRange;
+    private float controlRodCrankConnectionTotalMovementRange;
     private float connectingArmAngle = 0;
-    private float secondsPerHalfRotation;
 
     private GameObject flywheel;
     private GameObject pistonRod;
@@ -51,6 +57,11 @@ public class SteamEngineController : MonoBehaviour
     private GameObject largeCrankAxle;
     private GameObject controlRod;
     private GameObject controlRodRotationJoint;
+
+    [SerializeField]
+    private GameObject pistonRodCrankConnection;
+    [SerializeField]
+    private GameObject controlRodCrankConnection;
 
     [SerializeField]
     private GameObject rpmGauge;
@@ -81,6 +92,9 @@ public class SteamEngineController : MonoBehaviour
         pistonRodTotalMovementRange = pistonRodMovementRange.y - pistonRodMovementRange.x;
         controlRodTotalMovementRange = controlRodMovementRange.y - controlRodMovementRange.x;
 
+        pistonRodCrankConnectionTotalMovementRange = pistonRodCrankConnectionMovementRange.y - pistonRodCrankConnectionMovementRange.x;
+        controlRodCrankConnectionTotalMovementRange = controlRodCrankConnectionMovementRange.y - controlRodCrankConnectionMovementRange.x;
+
         steamOutletLeverScript.SetValue(0);
         waterInjectorLeverScript.SetValue(0);
         GlobalSettingsManager.Instance.CaptureMouse = true;
@@ -100,7 +114,6 @@ public class SteamEngineController : MonoBehaviour
         if (flywheelRPM > 0)
         {
             RotateFlywheel();
-            CalculateSecondsPerHalfRotation();
             CalculateConnectingArmAngle();
             RepositionPistonRod();
             RepositionControlRod();
@@ -121,11 +134,6 @@ public class SteamEngineController : MonoBehaviour
         flywheel.transform.localEulerAngles = new Vector3(flywheelCurrentRotation, 0, 90);
     }
 
-    private void CalculateSecondsPerHalfRotation()
-    {
-        secondsPerHalfRotation = (1 / (flywheelRPM / 60)) / 2;
-    }
-
     private void CalculateConnectingArmAngle()
     {
         Vector3 crankAxleDirection = largeCrankAxle.transform.position - pistonRodJoint.transform.position;
@@ -134,62 +142,22 @@ public class SteamEngineController : MonoBehaviour
 
     private void RepositionPistonRod()
     {
-        float distanceToMove = (pistonRodTotalMovementRange / secondsPerHalfRotation) * Time.deltaTime * 2;
+        float connectionCurrentPosition = pistonRodCrankConnection.transform.position.z;
 
-        if(pistonRodExtending)
-        {
-            if(pistonRod.transform.localPosition.z + distanceToMove >= pistonRodMovementRange.y)
-            {
-                pistonRod.transform.localPosition = new Vector3(pistonRod.transform.localPosition.x, pistonRod.transform.localPosition.y, pistonRodMovementRange.y);
-                pistonRodExtending = false;
-            }
-            else
-            {
-                pistonRod.transform.Translate(0, 0, distanceToMove);
-            }
-        }
-        else
-        {
-            if (pistonRod.transform.localPosition.z - distanceToMove <= pistonRodMovementRange.x)
-            {
-                pistonRod.transform.localPosition = new Vector3(pistonRod.transform.localPosition.x, pistonRod.transform.localPosition.y, pistonRodMovementRange.x);
-                pistonRodExtending = true;
-            }
-            else
-            {
-                pistonRod.transform.Translate(0, 0, -distanceToMove);
-            }
-        }
+        float percentageOfFullExtension = (connectionCurrentPosition - pistonRodCrankConnectionMovementRange.x) / pistonRodCrankConnectionTotalMovementRange;
+
+        pistonRod.transform.localPosition = new Vector3(pistonRod.transform.localPosition.x, pistonRod.transform.localPosition.y, pistonRodMovementRange.x + (pistonRodTotalMovementRange * percentageOfFullExtension));
 
         pistonRodJoint.transform.localEulerAngles = new Vector3(connectingArmAngle + 90, 0, 0);
     }
 
     private void RepositionControlRod()
     {
-        float distanceToMove = (controlRodTotalMovementRange / secondsPerHalfRotation) * Time.deltaTime * 2;
+        float connectionCurrentPosition = controlRodCrankConnection.transform.position.z;
 
-        if (!pistonRodExtending)
-        {
-            if (controlRod.transform.localPosition.z + distanceToMove >= controlRodMovementRange.y)
-            {
-                controlRod.transform.localPosition = new Vector3(controlRod.transform.localPosition.x, controlRod.transform.localPosition.y, controlRodMovementRange.y);
-            }
-            else
-            {
-                controlRod.transform.Translate(0, 0, distanceToMove);
-            }
-        }
-        else
-        {
-            if (controlRod.transform.localPosition.z - distanceToMove <= controlRodMovementRange.x)
-            {
-                controlRod.transform.localPosition = new Vector3(controlRod.transform.localPosition.x, controlRod.transform.localPosition.y, controlRodMovementRange.x);
-            }
-            else
-            {
-                controlRod.transform.Translate(0, 0, -distanceToMove);
-            }
-        }
+        float percentageOfFullExtension = (connectionCurrentPosition - controlRodCrankConnectionMovementRange.x) / controlRodCrankConnectionTotalMovementRange;
+
+        controlRod.transform.localPosition = new Vector3(controlRod.transform.localPosition.x, controlRod.transform.localPosition.y, controlRodMovementRange.x + (controlRodTotalMovementRange * percentageOfFullExtension));
 
         controlRodRotationJoint.transform.localEulerAngles = new Vector3(-connectingArmAngle * 0.4f, 0, 0);
     }
@@ -221,9 +189,8 @@ public class SteamEngineController : MonoBehaviour
 
         float steamOutletPercentage = (currentSteamOutletValue - minValueToRotateFlywheel) / steamOutletLeverScript.GetMaxValue();
 
-        if (currentSteamOutletValue > minValueToRotateFlywheel)
+        if (percentageOfSteamPressure > 0.1 && currentSteamOutletValue > minValueToRotateFlywheel)
         {
-            
             targetFlywheelRPM = flywheelMaxRPM * steamOutletPercentage;
         }
 
@@ -249,6 +216,8 @@ public class SteamEngineController : MonoBehaviour
             if(fuelAmount < 0)
                 fuelAmount = 0;
         }
+
+        UpdateFuelGameObjects();
     }
 
     private void UpdateWaterAmount()
@@ -277,9 +246,19 @@ public class SteamEngineController : MonoBehaviour
         if(steamPressure < maxSteamPressure)
         {
             float percentageOfFuel = fuelAmount / maxFuelAmount;
-            float percentageOfWater = waterAmount / maxWaterAmount;
 
-            steamPressure += maxSteamBuildUpRate * percentageOfFuel * percentageOfWater * Time.deltaTime;
+            float optimalWaterLevel = maxWaterAmount / 2;
+            float waterLevelMultiplier;
+            if(waterAmount <= optimalWaterLevel)
+            {
+                waterLevelMultiplier = waterAmount / optimalWaterLevel;
+            }
+            else
+            {
+                waterLevelMultiplier = (optimalWaterLevel - (waterAmount - optimalWaterLevel)) / optimalWaterLevel;
+            }
+
+            steamPressure += maxSteamBuildUpRate * percentageOfFuel * waterLevelMultiplier * Time.deltaTime;
 
             if(steamPressure > maxSteamPressure)
                 steamPressure = maxSteamPressure;
@@ -294,6 +273,21 @@ public class SteamEngineController : MonoBehaviour
             if(steamPressure < 0)
                 steamPressure = 0;
         }
+    }
+
+    private void UpdateFuelGameObjects()
+    {
+        int nrLogsVisible = fuelAmount > 0 ? (int)(fuelAmount / 10) + 1 : 0;
+
+        for(int i = 0; i < fuelGameObjects.Count; i++)
+        {
+            if (i < nrLogsVisible)
+                fuelGameObjects[i].SetActive(true);
+            else
+                fuelGameObjects[i].SetActive(false);
+        }
+
+        fuelSpotlight.intensity = nrLogsVisible;
     }
 
     public float AddFuel(float amount)
