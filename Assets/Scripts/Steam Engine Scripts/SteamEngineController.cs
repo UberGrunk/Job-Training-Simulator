@@ -299,4 +299,9 @@ public class SteamEngineController : MonoBehaviour
 
         return fuelAmount;
     }
+
+    public void CheckWaterLevelTaskConditions(PlayerTask playerTask)
+    {
+        playerTask.SetTaskDone(waterAmount >= 45);
+    }
 }

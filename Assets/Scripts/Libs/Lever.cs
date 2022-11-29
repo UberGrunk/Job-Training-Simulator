@@ -58,7 +58,6 @@ public class Lever : LeversAndGauges, IPointerDownHandler, IPointerUpHandler, IP
         return currentValue;
     }
 
-    //TODO: Click and drag interaction that changes the rotation of the rotatingObject
     public void OnPointerDown(PointerEventData eventData)
     {
         GlobalSettingsManager.Instance.CaptureMouse = false;
@@ -80,7 +79,7 @@ public class Lever : LeversAndGauges, IPointerDownHandler, IPointerUpHandler, IP
 
     public void OnPointerExit(PointerEventData eventData)
     {
-        if (mouseOverIndicator != null)
+        if (!dragging && mouseOverIndicator != null)
             mouseOverIndicator.SetActive(false);
     }
 
