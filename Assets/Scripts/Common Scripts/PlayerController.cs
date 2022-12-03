@@ -35,12 +35,13 @@ public class PlayerController : MonoBehaviour
 
     private void Update()
     {
-        CheckCaptureMouseAction();
+        if(!GlobalSettingsManager.Instance.GameOver)
+            CheckCaptureMouseAction();
     }
 
     private void FixedUpdate()
     {
-        if (GlobalSettingsManager.Instance.CaptureMouse)
+        if (!GlobalSettingsManager.Instance.GameOver && GlobalSettingsManager.Instance.CaptureMouse)
         {
             UpdateVelocity();
             Move();
@@ -50,7 +51,7 @@ public class PlayerController : MonoBehaviour
 
     private void LateUpdate()
     {
-        if (GlobalSettingsManager.Instance.CaptureMouse)
+        if (!GlobalSettingsManager.Instance.GameOver && GlobalSettingsManager.Instance.CaptureMouse)
         {
             RotateCamera();
         }

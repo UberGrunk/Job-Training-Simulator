@@ -16,12 +16,15 @@ public class Lever : LeversAndGauges, IPointerDownHandler, IPointerUpHandler, IP
 
     private new void Update()
     {
-        if(dragging)
+        if (!GlobalSettingsManager.Instance.GameOver)
         {
-            UpdateLeverValue();
-        }
+            if (dragging)
+            {
+                UpdateLeverValue();
+            }
 
-        base.Update();
+            base.Update();
+        }
     }
 
     public float GetValue()
@@ -67,7 +70,8 @@ public class Lever : LeversAndGauges, IPointerDownHandler, IPointerUpHandler, IP
 
     public void OnPointerUp(PointerEventData eventData)
     {
-        GlobalSettingsManager.Instance.CaptureMouse = true;
+        if(!GlobalSettingsManager.Instance.GameOver)
+            GlobalSettingsManager.Instance.CaptureMouse = true;
         dragging = false;
     }
 

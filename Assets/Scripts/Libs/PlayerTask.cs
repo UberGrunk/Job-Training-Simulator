@@ -18,17 +18,20 @@ public class PlayerTask : MonoBehaviour
     [SerializeField]
     private List<PlayerTask> prerequisites;
     [SerializeField]
-    private int taskTimeSeconds;
+    private float taskTimeSeconds;
     [SerializeField]
     private int initialTaskTimeSeconds;
+
+    public bool IsActive { get { return isActive; } set { isActive = value; } }
+    public bool TaskDone { get { return taskDone; } set { taskDone = value; } }
+    public string TaskName { get { return taskName; } }
+    public string TaskDescription { get { return taskDescription; } }
+    public List<PlayerTask> Prerequisites { get { return prerequisites; } }
+    public float TaskTimeSeconds { get { return taskTimeSeconds; } set { taskTimeSeconds = value; } }
+    public int InitialTaskTimeSeconds { get { return initialTaskTimeSeconds; } }
 
     public void UpdateTaskDone()
     {
         conditionsTest.Invoke(this);
-    }
-
-    public void SetTaskDone(bool newTaskDoneValue)
-    {
-        taskDone = newTaskDoneValue;
     }
 }

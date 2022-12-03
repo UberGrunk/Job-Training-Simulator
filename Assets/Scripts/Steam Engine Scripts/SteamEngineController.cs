@@ -98,25 +98,30 @@ public class SteamEngineController : MonoBehaviour
         steamOutletLeverScript.SetValue(0);
         waterInjectorLeverScript.SetValue(0);
         GlobalSettingsManager.Instance.CaptureMouse = true;
+        GlobalSettingsManager.Instance.GameOver = false;
+        GlobalSettingsManager.Instance.AllTasksDone = false;
     }
 
     // Update is called once per frame
     void Update()
     {
-        UpdateFlywheelRPM();
-        SetRPMGauge();
-        SetSteamPressureGauge();
-        SetWaterLevelGauge();
-        UpdateSteamPressure();
-        UpdateWaterAmount();
-        UpdateFuelAmount();
-
-        if (flywheelRPM > 0)
+        if (!GlobalSettingsManager.Instance.GameOver)
         {
-            RotateFlywheel();
-            CalculateConnectingArmAngle();
-            RepositionPistonRod();
-            RepositionControlRod();
+            UpdateFlywheelRPM();
+            SetRPMGauge();
+            SetSteamPressureGauge();
+            SetWaterLevelGauge();
+            UpdateSteamPressure();
+            UpdateWaterAmount();
+            UpdateFuelAmount();
+
+            if (flywheelRPM > 0)
+            {
+                RotateFlywheel();
+                CalculateConnectingArmAngle();
+                RepositionPistonRod();
+                RepositionControlRod();
+            }
         }
     }
 
@@ -273,6 +278,9 @@ public class SteamEngineController : MonoBehaviour
             if(steamPressure < 0)
                 steamPressure = 0;
         }
+
+        if (steamPressure > 90)
+            GlobalSettingsManager.Instance.GameOver = true;
     }
 
     private void UpdateFuelGameObjects()
@@ -302,6 +310,31 @@ public class SteamEngineController : MonoBehaviour
 
     public void CheckWaterLevelTaskConditions(PlayerTask playerTask)
     {
-        playerTask.SetTaskDone(waterAmount >= 45);
+        playerTask.TaskDone = waterAmount >= 45;
+    }
+
+    public void CheckFuelLevelTaskConditions(PlayerTask playerTask)
+    {
+        playerTask.TaskDone = fuelAmount > 95;
+    }
+
+    public void CheckPressureLevelTaskConditions(PlayerTask playerTask)
+    {
+        playerTask.TaskDone = steamPressure >= 70;
+    }
+
+    public void CheckMaintainRPMTaskConditions(PlayerTask playerTask)
+    {
+        if (flywheelRPM >= 50)
+            playerTask.TaskTimeSeconds -= Time.deltaTime;
+        else
+            playerTask.TaskTimeSeconds = playerTask.InitialTaskTimeSeconds;
+
+        playerTask.TaskDone = playerTask.TaskTimeSeconds <= 0;
+    }
+
+    public void CheckSafeStopConditions(PlayerTask playerTask)
+    {
+        playerTask.TaskDone = steamPressure < 10;
     }
 }
