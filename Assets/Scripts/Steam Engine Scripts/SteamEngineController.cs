@@ -10,12 +10,19 @@ public class SteamEngineController : MonoBehaviour
     private float flywheelCurrentRotation = 90;
     private float flywheelNaturalResistance = 5;
     private float flywheelAccelerationPower = 10;
+    [SerializeField]
+    private AudioSource flywheelSound;
+    [SerializeField]
+    private AudioSource steamChuntSound;
+    [SerializeField]
+    private AudioSource steamHissSound;
 
     [SerializeField]
     private float steamPressure = 0;
     private float maxSteamPressure = 100;
     private float maxSteamUsageRate = 0.8f;
     private float maxSteamBuildUpRate = 0.8f;
+    private float steamOutletPercentage = 0;
     [SerializeField]
     private GameObject steamPressureGauge;
     private LeversAndGauges steamPressureGaugeScript;
@@ -28,6 +35,15 @@ public class SteamEngineController : MonoBehaviour
     private List<GameObject> fuelGameObjects;
     [SerializeField]
     private Light fuelSpotlight;
+    [SerializeField]
+    private AudioSource fireSound;
+    [SerializeField]
+    private List<AudioClip> fireClips;
+    private AudioClip currentClip;
+    [SerializeField]
+    private ParticleSystem smoke;
+    [SerializeField]
+    private ParticleSystem sparks;
 
     [SerializeField]
     private float waterAmount = 0;
@@ -100,6 +116,19 @@ public class SteamEngineController : MonoBehaviour
         GlobalSettingsManager.Instance.CaptureMouse = true;
         GlobalSettingsManager.Instance.GameOver = false;
         GlobalSettingsManager.Instance.AllTasksDone = false;
+
+        flywheelSound.volume = 0;
+        flywheelSound.Play();
+
+        steamChuntSound.volume = 0;
+        steamChuntSound.Play();
+
+        steamHissSound.volume = 0;
+        steamHissSound.Play();
+
+        fireSound.clip = fireClips[0];
+        fireSound.volume = 0;
+        fireSound.Play();
     }
 
     // Update is called once per frame
@@ -210,6 +239,9 @@ public class SteamEngineController : MonoBehaviour
 
         if (flywheelRPM < 0)
             flywheelRPM = 0;
+
+        UpdateFlywheelSound();
+        UpdateSteamChuntSound();
     }
 
     private void UpdateFuelAmount()
@@ -223,6 +255,8 @@ public class SteamEngineController : MonoBehaviour
         }
 
         UpdateFuelGameObjects();
+        UpdateFireSound();
+        UpdateFireParticleSystems();
     }
 
     private void UpdateWaterAmount()
@@ -271,7 +305,7 @@ public class SteamEngineController : MonoBehaviour
 
         if(steamPressure > 0)
         {
-            float steamOutletPercentage = steamOutletLeverScript.GetValue() / steamOutletLeverScript.GetMaxValue();
+            steamOutletPercentage = steamOutletLeverScript.GetValue() / steamOutletLeverScript.GetMaxValue();
 
             steamPressure -= maxSteamUsageRate * steamOutletPercentage * Time.deltaTime;
 
@@ -281,6 +315,8 @@ public class SteamEngineController : MonoBehaviour
 
         if (steamPressure > 90)
             GlobalSettingsManager.Instance.GameOver = true;
+
+        UpdateSteamHissSound();
     }
 
     private void UpdateFuelGameObjects()
@@ -296,6 +332,93 @@ public class SteamEngineController : MonoBehaviour
         }
 
         fuelSpotlight.intensity = nrLogsVisible;
+    }
+
+    private void UpdateFireSound()
+    {
+        currentClip = fireSound.clip;
+
+        if(fuelAmount > 0 && fuelAmount <= 40)
+        {
+            fireSound.clip = fireClips[0];
+            fireSound.volume = 1;
+
+            if(currentClip != fireClips[0])
+                fireSound.Play();
+        }
+        else if(fuelAmount > 40 && fuelAmount <= 80)
+        {
+            fireSound.clip = fireClips[1];
+            fireSound.volume = 1;
+
+            if (currentClip != fireClips[1])
+                fireSound.Play();
+        }
+        else if(fuelAmount > 80)
+        {
+            fireSound.clip = fireClips[2];
+            fireSound.volume = 1;
+
+            if (currentClip != fireClips[2])
+                fireSound.Play();
+        }
+        else
+        {
+            fireSound.volume = 0;
+        }
+    }
+
+    private void UpdateFireParticleSystems()
+    {
+        if(fuelAmount > 0)
+        {
+            if(!smoke.isPlaying)
+                smoke.Play();
+
+            if(!sparks.isPlaying)
+                sparks.Play();
+        }
+        else
+        {
+            smoke.Stop();
+            sparks.Stop();
+        }
+    }
+
+    private void UpdateFlywheelSound()
+    {
+        if (flywheelRPM > 0)
+            flywheelSound.volume = 0.5f;
+        else
+            flywheelSound.volume = 0;
+    }
+
+    private void UpdateSteamChuntSound()
+    {
+        if (flywheelRPM > 40)
+        {
+            float normalSpeed = 60f / flywheelMaxRPM;
+            float currentFlywheelSpeed = flywheelRPM / flywheelMaxRPM;
+
+            float newSpeed = currentFlywheelSpeed / normalSpeed;
+
+            steamChuntSound.pitch = newSpeed;
+            steamChuntSound.outputAudioMixerGroup.audioMixer.SetFloat("Pitch", 1f / newSpeed);
+
+            steamChuntSound.volume = 1;
+        }
+        else
+            steamChuntSound.volume = 0;
+    }
+
+    private void UpdateSteamHissSound()
+    {
+        if (steamPressure > 0)
+        {
+            steamHissSound.volume = (steamPressure / maxSteamPressure) * steamOutletPercentage;
+        }
+        else
+            steamHissSound.volume = 0;
     }
 
     public float AddFuel(float amount)
