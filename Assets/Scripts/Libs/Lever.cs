@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 
+// INHERITENCE
 public class Lever : LeversAndGauges, IPointerDownHandler, IPointerUpHandler, IPointerEnterHandler, IPointerExitHandler
 {
     private bool dragging = false;
@@ -13,6 +14,7 @@ public class Lever : LeversAndGauges, IPointerDownHandler, IPointerUpHandler, IP
     private LeverOrientation leverOrientation;
     [SerializeField]
     private GameObject mouseOverIndicator;
+    private float currentValue;
 
     private new void Update()
     {
@@ -25,6 +27,14 @@ public class Lever : LeversAndGauges, IPointerDownHandler, IPointerUpHandler, IP
 
             base.Update();
         }
+    }
+
+    // POLYMORPHISM
+    public override float SetValue(float newValue)
+    {
+        currentValue = newValue;
+
+        return base.SetValue(newValue);
     }
 
     public float GetValue()

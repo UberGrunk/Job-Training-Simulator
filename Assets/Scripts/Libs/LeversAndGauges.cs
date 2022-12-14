@@ -29,6 +29,7 @@ public class LeversAndGauges : MonoBehaviour
         
     }
 
+    // ENCAPSULATION
     public float GetMaxValue()
     {
         return maxValue;
@@ -39,7 +40,7 @@ public class LeversAndGauges : MonoBehaviour
         return minValue;
     }
 
-    public float SetValue(float newValue)
+    public virtual float SetValue(float newValue)
     {
         if(newValue < minValue)
             newValue = minValue;
@@ -56,7 +57,6 @@ public class LeversAndGauges : MonoBehaviour
         float newRotation = ((rotationRange * percentageOfValue) + minRotation) % 360;
 
         rotatingObject.transform.localEulerAngles = new Vector3(newRotation * rotationAxle.x, newRotation * rotationAxle.y, newRotation * rotationAxle.z);
-        //rotatingObject.transform.eulerAngles = new Vector3(newRotation * rotationAxle.x, newRotation * rotationAxle.y, newRotation * rotationAxle.z);
 
         return newRotation;
     }
