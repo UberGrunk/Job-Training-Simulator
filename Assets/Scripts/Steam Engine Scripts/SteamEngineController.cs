@@ -15,6 +15,10 @@ public class SteamEngineController : MonoBehaviour
     [SerializeField]
     private AudioSource steamChuntSound;
     [SerializeField]
+    private AudioClip steamChuntClip;
+    [SerializeField]
+    private AudioClip steamChuntSlowClip;
+    [SerializeField]
     private AudioSource steamHissSound;
 
     [SerializeField]
@@ -395,8 +399,32 @@ public class SteamEngineController : MonoBehaviour
 
     private void UpdateSteamChuntSound()
     {
-        if (flywheelRPM > 40)
+        if(flywheelRPM > 20 && flywheelRPM <=40)
         {
+            if(steamChuntSound.clip != steamChuntSlowClip)
+            {
+                steamChuntSound.clip = steamChuntSlowClip;
+                steamChuntSound.Play();
+            }
+
+            float normalSpeed = 30f / flywheelMaxRPM;
+            float currentFlywheelSpeed = flywheelRPM / flywheelMaxRPM;
+
+            float newSpeed = currentFlywheelSpeed / normalSpeed;
+
+            steamChuntSound.pitch = newSpeed;
+            steamChuntSound.outputAudioMixerGroup.audioMixer.SetFloat("Pitch", 1f / newSpeed);
+
+            steamChuntSound.volume = 1;
+        }
+        else if (flywheelRPM > 40)
+        {
+            if(steamChuntSound.clip != steamChuntClip)
+            {
+                steamChuntSound.clip= steamChuntClip;
+                steamChuntSound.Play();
+            }
+
             float normalSpeed = 60f / flywheelMaxRPM;
             float currentFlywheelSpeed = flywheelRPM / flywheelMaxRPM;
 

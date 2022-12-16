@@ -8016,7 +8016,7 @@ AudioSource:
   m_Enabled: 1
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 24300002, guid: b2db5020e275e6844bd34ebad7f5dd67, type: 2}
-  m_audioClip: {fileID: 8300000, guid: 33e66fa4c8abb754e99ba91084ae8742, type: 3}
+  m_audioClip: {fileID: 8300000, guid: 0cd83daf496215d46b3afc185e49c9ae, type: 3}
   m_PlayOnAwake: 0
   m_Volume: 1
   m_Pitch: 0.5
@@ -18294,6 +18294,8 @@ MonoBehaviour:
   flywheelRPM: 0
   flywheelSound: {fileID: 2115781782}
   steamChuntSound: {fileID: 874472246}
+  steamChuntClip: {fileID: 8300000, guid: 33e66fa4c8abb754e99ba91084ae8742, type: 3}
+  steamChuntSlowClip: {fileID: 8300000, guid: 0cd83daf496215d46b3afc185e49c9ae, type: 3}
   steamHissSound: {fileID: 2091679343}
   steamPressure: 0
   steamPressureGauge: {fileID: 1195122045}
