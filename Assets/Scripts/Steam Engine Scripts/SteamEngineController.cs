@@ -91,6 +91,10 @@ public class SteamEngineController : MonoBehaviour
     private GameObject steamOutletLever;
     private Lever steamOutletLeverScript;
 
+    private float lastUpdateTime = 0;
+    private float updateInterval = 0.1f;
+    private float currentDeltaTime = 0;
+
     private void Awake()
     {
         rpmGaugeScript = rpmGauge.GetComponent<LeversAndGauges>();
@@ -140,13 +144,20 @@ public class SteamEngineController : MonoBehaviour
     {
         if (!GlobalSettingsManager.Instance.GameOver)
         {
-            UpdateFlywheelRPM();
-            SetRPMGauge();
-            SetSteamPressureGauge();
-            SetWaterLevelGauge();
-            UpdateSteamPressure();
-            UpdateWaterAmount();
-            UpdateFuelAmount();
+            if (Time.realtimeSinceStartup > (lastUpdateTime + updateInterval))
+            {
+                currentDeltaTime = Time.realtimeSinceStartup - lastUpdateTime;
+
+                UpdateFlywheelRPM();
+                SetRPMGauge();
+                SetSteamPressureGauge();
+                SetWaterLevelGauge();
+                UpdateSteamPressure();
+                UpdateWaterAmount();
+                UpdateFuelAmount();
+
+                lastUpdateTime = Time.realtimeSinceStartup;
+            }
 
             if (flywheelRPM > 0)
             {
@@ -234,11 +245,11 @@ public class SteamEngineController : MonoBehaviour
 
         if(flywheelRPM > targetFlywheelRPM)
         {
-            flywheelRPM -= (flywheelNaturalResistance + (flywheelAccelerationPower * percentageOfSteamPressure * steamOutletPercentage)) * Time.deltaTime;
+            flywheelRPM -= (flywheelNaturalResistance + (flywheelAccelerationPower * percentageOfSteamPressure * steamOutletPercentage)) * currentDeltaTime;//Time.deltaTime;
         }
         else if(flywheelRPM < targetFlywheelRPM)
         {
-            flywheelRPM += (flywheelAccelerationPower * percentageOfSteamPressure * steamOutletPercentage) * Time.deltaTime;
+            flywheelRPM += (flywheelAccelerationPower * percentageOfSteamPressure * steamOutletPercentage) * currentDeltaTime;//Time.deltaTime;
         }
 
         if (flywheelRPM < 0)
@@ -252,9 +263,9 @@ public class SteamEngineController : MonoBehaviour
     {
         if (fuelAmount > 0)
         {
-            fuelAmount -= fuelBurnRate * Time.deltaTime;
+            fuelAmount -= fuelBurnRate * currentDeltaTime;//Time.deltaTime;
 
-            if(fuelAmount < 0)
+            if (fuelAmount < 0)
                 fuelAmount = 0;
         }
 
@@ -267,9 +278,9 @@ public class SteamEngineController : MonoBehaviour
     {
         if(waterAmount < maxWaterAmount)
         {
-            waterAmount += maxWaterFillRate * (waterInjectorLeverScript.GetValue() / waterInjectorLeverScript.GetMaxValue()) * Time.deltaTime;
+            waterAmount += maxWaterFillRate * (waterInjectorLeverScript.GetValue() / waterInjectorLeverScript.GetMaxValue()) * currentDeltaTime;//Time.deltaTime;
 
-            if(waterAmount > maxWaterAmount)
+            if (waterAmount > maxWaterAmount)
                 waterAmount = maxWaterAmount;
         }
 
@@ -277,9 +288,9 @@ public class SteamEngineController : MonoBehaviour
         {
             float percentageOfFuel = fuelAmount / maxFuelAmount;
 
-            waterAmount -= maxWaterUsageRate * percentageOfFuel * Time.deltaTime;
+            waterAmount -= maxWaterUsageRate * percentageOfFuel * currentDeltaTime;//Time.deltaTime;
 
-            if(waterAmount < 0)
+            if (waterAmount < 0)
                 waterAmount = 0;
         }
     }
@@ -301,9 +312,9 @@ public class SteamEngineController : MonoBehaviour
                 waterLevelMultiplier = (optimalWaterLevel - (waterAmount - optimalWaterLevel)) / optimalWaterLevel;
             }
 
-            steamPressure += maxSteamBuildUpRate * percentageOfFuel * waterLevelMultiplier * Time.deltaTime;
+            steamPressure += maxSteamBuildUpRate * percentageOfFuel * waterLevelMultiplier * currentDeltaTime;//Time.deltaTime;
 
-            if(steamPressure > maxSteamPressure)
+            if (steamPressure > maxSteamPressure)
                 steamPressure = maxSteamPressure;
         }
 
@@ -311,9 +322,9 @@ public class SteamEngineController : MonoBehaviour
         {
             steamOutletPercentage = steamOutletLeverScript.GetValue() / steamOutletLeverScript.GetMaxValue();
 
-            steamPressure -= maxSteamUsageRate * steamOutletPercentage * Time.deltaTime;
+            steamPressure -= maxSteamUsageRate * steamOutletPercentage * currentDeltaTime;//Time.deltaTime;
 
-            if(steamPressure < 0)
+            if (steamPressure < 0)
                 steamPressure = 0;
         }
 
