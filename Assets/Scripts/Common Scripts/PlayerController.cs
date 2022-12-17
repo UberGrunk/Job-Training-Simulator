@@ -30,7 +30,6 @@ public class PlayerController : MonoBehaviour
         movementAction = playerInput.actions["Movement"];
         cameraAction = playerInput.actions["Camera"];
         captureMouseAction = playerInput.actions["CaptureMouse"];
-        Cursor.visible = false;
     }
 
     private void Update()
