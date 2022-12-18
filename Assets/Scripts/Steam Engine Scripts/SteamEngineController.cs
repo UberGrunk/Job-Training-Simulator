@@ -245,10 +245,20 @@ public class SteamEngineController : MonoBehaviour
         if(flywheelRPM > targetFlywheelRPM)
         {
             flywheelRPM -= (flywheelNaturalResistance + (flywheelAccelerationPower * percentageOfSteamPressure * steamOutletPercentage)) * currentDeltaTime;
+
+            if(flywheelRPM < targetFlywheelRPM)
+            {
+                flywheelRPM = targetFlywheelRPM;
+            }
         }
         else if(flywheelRPM < targetFlywheelRPM)
         {
             flywheelRPM += (flywheelAccelerationPower * percentageOfSteamPressure * steamOutletPercentage) * currentDeltaTime;
+
+            if (flywheelRPM > targetFlywheelRPM)
+            {
+                flywheelRPM = targetFlywheelRPM;
+            }
         }
 
         if (flywheelRPM < 0)
