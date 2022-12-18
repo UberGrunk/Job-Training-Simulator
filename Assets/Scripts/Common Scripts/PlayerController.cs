@@ -6,7 +6,7 @@ public class PlayerController : MonoBehaviour
 {
     private float playerMaxMovementSpeed = 3.0f;
     private float playerMovementAcceleration = 100f;
-    private float mouseSensitivity = 0.8f;
+    private float mouseSensitivity = 0.6f;
     private float cameraRotationSpeed = 45.0f;
     private float currentCameraVerticalRotation = 0;
     private float maxVerticalCameraRotation = 85;
@@ -30,7 +30,6 @@ public class PlayerController : MonoBehaviour
         movementAction = playerInput.actions["Movement"];
         cameraAction = playerInput.actions["Camera"];
         captureMouseAction = playerInput.actions["CaptureMouse"];
-        Cursor.visible = false;
     }
 
     private void Update()

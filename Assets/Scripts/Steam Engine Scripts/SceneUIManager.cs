@@ -14,6 +14,8 @@ public class SceneUIManager : MonoBehaviour
     private RectTransform tasksListItemPrefab;
     [SerializeField]
     private RectTransform gameOverBackground;
+    [SerializeField]
+    private RectTransform infoTextPanel;
 
     private GameObject checkmark;
     private TextMeshProUGUI titleText;
@@ -72,6 +74,13 @@ public class SceneUIManager : MonoBehaviour
     public void Retry()
     {
         SceneManager.LoadScene(1);
+    }
+
+    public void StartButtonPressed()
+    {
+        Cursor.visible = false;
+        GlobalSettingsManager.Instance.CaptureMouse = true;
+        infoTextPanel.gameObject.SetActive(false);
     }
 
     private void UpdatePlayerTasks()

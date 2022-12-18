@@ -15,6 +15,10 @@ public class SteamEngineController : MonoBehaviour
     [SerializeField]
     private AudioSource steamChuntSound;
     [SerializeField]
+    private AudioClip steamChuntClip;
+    [SerializeField]
+    private AudioClip steamChuntSlowClip;
+    [SerializeField]
     private AudioSource steamHissSound;
 
     [SerializeField]
@@ -87,6 +91,10 @@ public class SteamEngineController : MonoBehaviour
     private GameObject steamOutletLever;
     private Lever steamOutletLeverScript;
 
+    private float lastUpdateTime = 0;
+    private float updateInterval = 0.1f;
+    private float currentDeltaTime = 0;
+
     private void Awake()
     {
         rpmGaugeScript = rpmGauge.GetComponent<LeversAndGauges>();
@@ -113,7 +121,6 @@ public class SteamEngineController : MonoBehaviour
 
         steamOutletLeverScript.SetValue(0);
         waterInjectorLeverScript.SetValue(0);
-        GlobalSettingsManager.Instance.CaptureMouse = true;
         GlobalSettingsManager.Instance.GameOver = false;
         GlobalSettingsManager.Instance.AllTasksDone = false;
 
@@ -136,13 +143,20 @@ public class SteamEngineController : MonoBehaviour
     {
         if (!GlobalSettingsManager.Instance.GameOver)
         {
-            UpdateFlywheelRPM();
-            SetRPMGauge();
-            SetSteamPressureGauge();
-            SetWaterLevelGauge();
-            UpdateSteamPressure();
-            UpdateWaterAmount();
-            UpdateFuelAmount();
+            if (Time.realtimeSinceStartup > (lastUpdateTime + updateInterval))
+            {
+                currentDeltaTime = Time.realtimeSinceStartup - lastUpdateTime;
+
+                UpdateFlywheelRPM();
+                SetRPMGauge();
+                SetSteamPressureGauge();
+                SetWaterLevelGauge();
+                UpdateSteamPressure();
+                UpdateWaterAmount();
+                UpdateFuelAmount();
+
+                lastUpdateTime = Time.realtimeSinceStartup;
+            }
 
             if (flywheelRPM > 0)
             {
@@ -230,11 +244,21 @@ public class SteamEngineController : MonoBehaviour
 
         if(flywheelRPM > targetFlywheelRPM)
         {
-            flywheelRPM -= (flywheelNaturalResistance + (flywheelAccelerationPower * percentageOfSteamPressure * steamOutletPercentage)) * Time.deltaTime;
+            flywheelRPM -= (flywheelNaturalResistance + (flywheelAccelerationPower * percentageOfSteamPressure * steamOutletPercentage)) * currentDeltaTime;
+
+            if(flywheelRPM < targetFlywheelRPM)
+            {
+                flywheelRPM = targetFlywheelRPM;
+            }
         }
         else if(flywheelRPM < targetFlywheelRPM)
         {
-            flywheelRPM += (flywheelAccelerationPower * percentageOfSteamPressure * steamOutletPercentage) * Time.deltaTime;
+            flywheelRPM += (flywheelAccelerationPower * percentageOfSteamPressure * steamOutletPercentage) * currentDeltaTime;
+
+            if (flywheelRPM > targetFlywheelRPM)
+            {
+                flywheelRPM = targetFlywheelRPM;
+            }
         }
 
         if (flywheelRPM < 0)
@@ -248,9 +272,9 @@ public class SteamEngineController : MonoBehaviour
     {
         if (fuelAmount > 0)
         {
-            fuelAmount -= fuelBurnRate * Time.deltaTime;
+            fuelAmount -= fuelBurnRate * currentDeltaTime;
 
-            if(fuelAmount < 0)
+            if (fuelAmount < 0)
                 fuelAmount = 0;
         }
 
@@ -263,9 +287,9 @@ public class SteamEngineController : MonoBehaviour
     {
         if(waterAmount < maxWaterAmount)
         {
-            waterAmount += maxWaterFillRate * (waterInjectorLeverScript.GetValue() / waterInjectorLeverScript.GetMaxValue()) * Time.deltaTime;
+            waterAmount += maxWaterFillRate * (waterInjectorLeverScript.GetValue() / waterInjectorLeverScript.GetMaxValue()) * currentDeltaTime;
 
-            if(waterAmount > maxWaterAmount)
+            if (waterAmount > maxWaterAmount)
                 waterAmount = maxWaterAmount;
         }
 
@@ -273,9 +297,9 @@ public class SteamEngineController : MonoBehaviour
         {
             float percentageOfFuel = fuelAmount / maxFuelAmount;
 
-            waterAmount -= maxWaterUsageRate * percentageOfFuel * Time.deltaTime;
+            waterAmount -= maxWaterUsageRate * percentageOfFuel * currentDeltaTime;
 
-            if(waterAmount < 0)
+            if (waterAmount < 0)
                 waterAmount = 0;
         }
     }
@@ -297,9 +321,9 @@ public class SteamEngineController : MonoBehaviour
                 waterLevelMultiplier = (optimalWaterLevel - (waterAmount - optimalWaterLevel)) / optimalWaterLevel;
             }
 
-            steamPressure += maxSteamBuildUpRate * percentageOfFuel * waterLevelMultiplier * Time.deltaTime;
+            steamPressure += maxSteamBuildUpRate * percentageOfFuel * waterLevelMultiplier * currentDeltaTime;
 
-            if(steamPressure > maxSteamPressure)
+            if (steamPressure > maxSteamPressure)
                 steamPressure = maxSteamPressure;
         }
 
@@ -307,9 +331,9 @@ public class SteamEngineController : MonoBehaviour
         {
             steamOutletPercentage = steamOutletLeverScript.GetValue() / steamOutletLeverScript.GetMaxValue();
 
-            steamPressure -= maxSteamUsageRate * steamOutletPercentage * Time.deltaTime;
+            steamPressure -= maxSteamUsageRate * steamOutletPercentage * currentDeltaTime;
 
-            if(steamPressure < 0)
+            if (steamPressure < 0)
                 steamPressure = 0;
         }
 
@@ -395,8 +419,32 @@ public class SteamEngineController : MonoBehaviour
 
     private void UpdateSteamChuntSound()
     {
-        if (flywheelRPM > 40)
+        if(flywheelRPM > 20 && flywheelRPM <=40)
         {
+            if(steamChuntSound.clip != steamChuntSlowClip)
+            {
+                steamChuntSound.clip = steamChuntSlowClip;
+                steamChuntSound.Play();
+            }
+
+            float normalSpeed = 30f / flywheelMaxRPM;
+            float currentFlywheelSpeed = flywheelRPM / flywheelMaxRPM;
+
+            float newSpeed = currentFlywheelSpeed / normalSpeed;
+
+            steamChuntSound.pitch = newSpeed;
+            steamChuntSound.outputAudioMixerGroup.audioMixer.SetFloat("Pitch", 1f / newSpeed);
+
+            steamChuntSound.volume = 1;
+        }
+        else if (flywheelRPM > 40)
+        {
+            if(steamChuntSound.clip != steamChuntClip)
+            {
+                steamChuntSound.clip= steamChuntClip;
+                steamChuntSound.Play();
+            }
+
             float normalSpeed = 60f / flywheelMaxRPM;
             float currentFlywheelSpeed = flywheelRPM / flywheelMaxRPM;
 
