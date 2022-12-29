@@ -54,6 +54,7 @@ public class SceneUIManager : MonoBehaviour
             if (!showingGameOverScreen)
             {
                 GlobalSettingsManager.Instance.CaptureMouse = false;
+                Cursor.lockState = CursorLockMode.None;
                 Cursor.visible = true;
                 ShowGameOverScreen();
             }
