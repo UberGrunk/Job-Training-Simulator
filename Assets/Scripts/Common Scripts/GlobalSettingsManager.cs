@@ -7,6 +7,7 @@ public class GlobalSettingsManager : MonoBehaviour
     public bool CaptureMouse { get; set; }
     public bool GameOver { get; set; }
     public bool AllTasksDone { get; set; }
+    public GameObject LookedAtObject { get; set; }
 
     private void Awake()
     {

@@ -5,7 +5,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 
 // INHERITENCE
-public class Lever : LeversAndGauges, IPointerDownHandler, IPointerUpHandler, IPointerEnterHandler, IPointerExitHandler
+public class Lever : LeversAndGauges
 {
     private bool dragging = false;
     private float draggingSensitivity = 0.25f;
@@ -15,11 +15,23 @@ public class Lever : LeversAndGauges, IPointerDownHandler, IPointerUpHandler, IP
     [SerializeField]
     private GameObject mouseOverIndicator;
     private float currentValue;
+    private PlayerInput playerInput;
+    private InputAction interactAction;
+
+    private new void Start()
+    {
+        playerInput = GameObject.Find("Player").GetComponent<PlayerInput>();
+        interactAction = playerInput.actions["Interact"];
+
+        base.Start();
+    }
 
     private new void Update()
     {
         if (!GlobalSettingsManager.Instance.GameOver)
         {
+            CheckIsLookedAt();
+
             if (dragging)
             {
                 UpdateLeverValue();
@@ -71,30 +83,41 @@ public class Lever : LeversAndGauges, IPointerDownHandler, IPointerUpHandler, IP
         return currentValue;
     }
 
-    public void OnPointerDown(PointerEventData eventData)
+    private void CheckIsLookedAt()
     {
-        GlobalSettingsManager.Instance.CaptureMouse = false;
-        dragging = true;
-        lastMousePosition = Mouse.current.position.ReadValue();
-    }
+        if(GlobalSettingsManager.Instance.LookedAtObject != null && GlobalSettingsManager.Instance.LookedAtObject == gameObject)
+        {
+            if (mouseOverIndicator != null)
+                mouseOverIndicator.SetActive(true);
 
-    public void OnPointerUp(PointerEventData eventData)
-    {
-        if(!GlobalSettingsManager.Instance.GameOver)
-            GlobalSettingsManager.Instance.CaptureMouse = true;
-        dragging = false;
-    }
+            if(interactAction.WasPressedThisFrame())
+            {
+                GlobalSettingsManager.Instance.CaptureMouse = false;
+                dragging = true;
+                lastMousePosition = Mouse.current.position.ReadValue();
+            }
 
-    public void OnPointerEnter(PointerEventData eventData)
-    {
-        if(mouseOverIndicator != null)
-            mouseOverIndicator.SetActive(true);
-    }
+            if(interactAction.WasReleasedThisFrame())
+            {
+                if (!GlobalSettingsManager.Instance.GameOver)
+                    GlobalSettingsManager.Instance.CaptureMouse = true;
 
-    public void OnPointerExit(PointerEventData eventData)
-    {
-        if (!dragging && mouseOverIndicator != null)
-            mouseOverIndicator.SetActive(false);
+                dragging = false;
+            }
+        }
+        else
+        {
+            if (mouseOverIndicator != null)
+                mouseOverIndicator.SetActive(false);
+
+            if(interactAction.WasReleasedThisFrame())
+            {
+                if (!GlobalSettingsManager.Instance.GameOver)
+                    GlobalSettingsManager.Instance.CaptureMouse = true;
+            }
+
+            dragging = false;
+        }
     }
 
     private float UpdateLeverValue()

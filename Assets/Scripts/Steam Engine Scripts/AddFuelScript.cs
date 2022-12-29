@@ -2,8 +2,9 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
 
-public class AddFuelScript : MonoBehaviour, IPointerClickHandler, IPointerEnterHandler, IPointerExitHandler
+public class AddFuelScript : MonoBehaviour
 {
     [SerializeField]
     private float amountToAdd = 10;
@@ -12,26 +13,58 @@ public class AddFuelScript : MonoBehaviour, IPointerClickHandler, IPointerEnterH
     private SteamEngineController steamEngineScript;
     [SerializeField]
     private GameObject mouseOverIndicator;
+    private PlayerInput playerInput;
+    private InputAction interactAction;
 
     private void Start()
     {
+        playerInput = GameObject.Find("Player").GetComponent<PlayerInput>();
+        interactAction = playerInput.actions["Interact"];
+
         steamEngineScript = steamEngine.GetComponent<SteamEngineController>();
     }
 
-    public void OnPointerClick(PointerEventData eventData)
+    private void Update()
     {
-        steamEngineScript.AddFuel(amountToAdd);
+        if (!GlobalSettingsManager.Instance.GameOver)
+        {
+            CheckIsLookedAt();
+        }
     }
 
-    public void OnPointerEnter(PointerEventData eventData)
+    private void CheckIsLookedAt()
     {
-        if (mouseOverIndicator != null)
-            mouseOverIndicator.SetActive(true);
+        if (GlobalSettingsManager.Instance.LookedAtObject != null && GlobalSettingsManager.Instance.LookedAtObject == gameObject)
+        {
+            if (mouseOverIndicator != null)
+                mouseOverIndicator.SetActive(true);
+
+            if(interactAction.WasPressedThisFrame())
+            {
+                steamEngineScript.AddFuel(amountToAdd);
+            }
+        }
+        else
+        {
+            if (mouseOverIndicator != null)
+                mouseOverIndicator.SetActive(false);
+        }
     }
 
-    public void OnPointerExit(PointerEventData eventData)
-    {
-        if (mouseOverIndicator != null)
-            mouseOverIndicator.SetActive(false);
-    }
+    //public void OnPointerClick(PointerEventData eventData)
+    //{
+    //    steamEngineScript.AddFuel(amountToAdd);
+    //}
+
+    //public void OnPointerEnter(PointerEventData eventData)
+    //{
+    //    if (mouseOverIndicator != null)
+    //        mouseOverIndicator.SetActive(true);
+    //}
+
+    //public void OnPointerExit(PointerEventData eventData)
+    //{
+    //    if (mouseOverIndicator != null)
+    //        mouseOverIndicator.SetActive(false);
+    //}
 }
