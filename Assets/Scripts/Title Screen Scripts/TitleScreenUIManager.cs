@@ -6,6 +6,8 @@ public class TitleScreenUIManager : MonoBehaviour
     private void Start()
     {
         GlobalSettingsManager.Instance.CaptureMouse = false;
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
     }
 
     public void SteamEngineButtonClicked()
